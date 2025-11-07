@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chat Bubble — Test</title>
+<style>
+body{margin:0;background:#0f1115;color:#eaeaea;font-family:Inter,system-ui,Arial}
+.wrap{max-width:860px;margin:24px auto;padding:0 16px}
+#cag-bubble{position:fixed;bottom:20px;right:20px;background:#10a37f;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#cag-panel{position:fixed;bottom:90px;right:20px;width:340px;height:480px;background:#1e1e1e;color:#eaeaea;border-radius:12px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:99999;border:1px solid #2c2c2c}
+#cag-msgs{flex:1;padding:12px;overflow-y:auto;scroll-behavior:smooth}
+.row{display:flex;border-top:1px solid #2c2c2c}
+#cag-input{flex:1;background:#1e1e1e;color:#fff;border:none;padding:12px;outline:none}
+#cag-send{background:#10a37f;border:none;color:#fff;padding:0 16px;cursor:pointer}
+</style></head>
+<body>
+<div class="wrap">
+  <h1>Chat Bubble — Test</h1>
+  <p>Set <code>API_URL</code> to your Vercel app, e.g.: <b>https://YOUR_APP.vercel.app/api/chat</b></p>
+</div>
+<div id="cag-bubble" title="Open chat">💬</div>
+<div id="cag-panel"><div id="cag-msgs"></div>
+  <div class="row"><input id="cag-input" type="text" placeholder="Type your message…"/><button id="cag-send">Send</button></div>
+</div>
+<script>
+(function(){
+  const API_URL = "https://YOUR_APP.vercel.app/api/chat"; // ← عدّلها
+  const bubble = document.getElementById('cag-bubble');
+  const panel  = document.getElementById('cag-panel');
+  const msgs   = document.getElementById('cag-msgs');
+  const input  = document.getElementById('cag-input');
+  const send   = document.getElementById('cag-send');
+  let locked=false;
+
+  bubble.onclick=()=>{const open=panel.style.display==='flex';panel.style.display=open?'none':'flex'; if(!open) input.focus();};
+  input.addEventListener('keypress',e=>{ if(e.key==='Enter') send.click(); });
+
+  send.onclick=async()=>{
+    const text=(input.value||"").trim(); if(!text||locked) return;
+    append('you',text); input.value=''; const typing=appendTyping(); lock(true);
+    try{
+      const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+      const data=await res.json(); typing.remove();
+      const reply=data.reply||"⚠️ Sorry, something went wrong."; await stream(reply);
+    }catch(e){ typing.remove(); append('bot',"⚠️ Server Error. Check CORS/URL and try again."); }
+    lock(false);
+  };
+
+  function lock(v){ locked=v; input.disabled=v; send.disabled=v; if(!v) input.focus(); }
+  function append(who,text){ const d=document.createElement('div'); d.style.margin='10px 0'; d.style.textAlign=who==='you'?'right':'left'; d.innerHTML=(who==='you'?'<b>You:</b> ':'<b>Bot:</b> ')+escapeHtml(text); msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d; }
+  function appendTyping(){ const d=document.createElement('div'); d.style.margin='8px 0'; d.innerHTML='<b>Bot:</b> <span style="opacity:.7">typing…</span>'; msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d; }
+  async function stream(text){ const d=append('bot',''); let cur=''; const words=text.split(' '); for(let i=0;i<words.length;i++){ cur+=words[i]+' '; d.innerHTML='<b>Bot:</b> '+escapeHtml(cur); msgs.scrollTop=msgs.scrollHeight; await delay(25+Math.random()*35); } }
+  function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+})();
+</script>
+</body></html>
