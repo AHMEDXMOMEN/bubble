@@ -5,7 +5,11 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export default async function handler(req, res) {
   // --- CORS ---
   const origin = req.headers.origin || "";
-  const allowList = ["https://www.ghalirealty.com", "https://ghalirealty.com"];
+  const allowList = ["https://www.ghalirealty.com", "https://ghalirealty.com" ,"http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+  ];
   if (allowList.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
